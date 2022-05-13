@@ -16,19 +16,6 @@ def cauchy(x, loc:float, scale:float):
         raise ValueError("Scale must be greater than 0.")
     return (np.pi*scale* (1 + ((x-loc)/scale)**2 ))**(-1)
 
-# helper function for poisson
-def continuum_approx(mu:float) -> float:
-    """Returns a float which approximately scales the continuous integral of
-    the poisson distribution to unity. Coefficients to an odd-degree Taylor
-    expansion T(x)=\sum^5_{i=0}c_ix^i found by multilinear regression."""
-    # regression on the ratio of \int^\infty_0 f(x)dx to \sum^\infty_{i=0}f(i)
-    # coefficients to T_5(x) civen by c_i
-    # odd-degree to suit the end behaviour of arctan and the residuals
-    ci = [0.369865360931, 4.11154855117, -4.51929684625, 5.65238457124,
-          -2.26404038444, 0.386793184544]
-    mui = [pow(mu,i) for i in range(len(ci))]
-    return (np.pi/2) * 1/np.arctan(np.dot(ci,mui))
-
 def poisson(x, mu:float, continuous:bool=True):
     """Return the Poisson distribution over the support x.
     PRECONDITION: min(x), mu >= 0.
@@ -37,8 +24,11 @@ def poisson(x, mu:float, continuous:bool=True):
         raise ValueError("Min(x) and mu must be non-negative.")
 
     from scipy.special import gamma as Gamma
+    from scipy.integrate import quad
+    # integrate to find appropriate normalization constant
+    scale = 1/quad(lambda x: mu**x/Gamma(1+x)*np.exp(-mu), a=0, b=200)[0]
     if continuous:
-        return continuum_approx(mu) * mu**x/Gamma(1+x) * np.exp(-mu)
+        return scale * mu**x/Gamma(1+x) * np.exp(-mu)
     return mu**x/Gamma(1+x) * np.exp(-mu)
 
 # =========================================================================== #
