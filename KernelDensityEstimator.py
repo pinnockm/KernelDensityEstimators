@@ -35,7 +35,7 @@ def poisson(x, mu:float, continuous:bool=True):
 
 class KDE:
 
-    def __init__(self, arr, cuts:int = 100) -> None:
+    def __init__(self, arr, cuts:int = 10) -> None:
         if cuts < 2:
             raise ValueError("k must be greater than 1.")
         
@@ -96,8 +96,8 @@ class KDE:
         sigma = 0.5 * width
         
         # support x
-        x = np.linspace(start=0.9*self.subintervals()[0][0],
-                        stop=1.1*self.subintervals()[-1][1],
+        x = np.linspace(start=0.95*self.subintervals()[0][0],
+                        stop=1.05*self.subintervals()[-1][1],
                         num=1000)
         
         pdf = 0
