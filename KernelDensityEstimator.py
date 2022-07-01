@@ -41,7 +41,17 @@ class KDE:
         
         self.k = cuts
         self.arr = arr
+        self.stats = self.__stats()
         pass
+    
+    def __stats(self):
+        from scipy.stats import skew
+        return {
+            "Mean": np.mean(self.arr),
+            "Variance": np.var(self.arr),
+            "Skewness": skew(self.arr),
+            "Quartiles": [np.quantile(self.arr, q/4) for q in range(5)]
+        }
 
     def subintervals(self) -> list:
         """Takes a discrete array of numerical values and an integral
@@ -74,8 +84,7 @@ class KDE:
         return midpts
 
     def density(self, dist:str ='gaussian', continuous:bool=True) -> tuple:
-        """Takes in an array-like of numerical data and an array of
-        subintervals. Returns a tuple of pdf support and density function
+        """Returns a tuple of pdf support and density function
         estimating the histogram of arr. Possible inputs for dist include:
         'gaussian', 'cauchy', 'poisson'.
 
@@ -101,17 +110,26 @@ class KDE:
                         num=1000)
         
         pdf = 0
+        # Gaussian RV
         if dist == 'gaussian':
             for alpha,mu in zip(alpha_i, mu_i):
+                # weighted sum of gaussians
+                # centered at midpoints of the intervals
+                # variance equal to half-width of the intervals
                 pdf += alpha * gaussian(x, mu, sigma)
             return (x, pdf/len(self.arr))   # tuple of support and pdf
         
+        # Cauchy RV
         elif dist == 'cauchy':
             print("Suggestion: if estimating with Cauchy, use at least twice as many cuts as you would for Gauss.")
             for alpha,mu in zip(alpha_i, mu_i):
+                # weighted sum of Cauchy random variables
+                # centered at midpoints of the intervals
+                # variance equal to the full width of the intervals
                 pdf += alpha * cauchy(x, mu, 2*sigma)
             return (x, pdf/len(self.arr))   # tuple of support and pdf
 
+        # Poisson RV
         else:
             from warnings import warn
             warn(
@@ -121,5 +139,55 @@ class KDE:
             print("Note: Poisson should only be used for skew-left integer data, decreasing on a support [0,N].")
             
             for alpha,mu in zip(alpha_i, mu_i):
+                # weighted sum of Poisson random variables
+                # centered at midpoints of the intervals
                 pdf += alpha * poisson(x, mu, continuous)
             return (x, pdf/len(self.arr))   # tuple of support and pdf
+
+    def analytic_expression(self, dist:str = 'gaussian', continuous:bool=True):
+        """Takes in a distribution type and returns the analytic expression of
+        the generated Kernel Density Estimate. Possible inputs for dist
+        include: 'gaussian', 'cauchy', 'poisson'."""
+
+        if dist not in ['gaussian', 'cauchy', 'gamma', 'poisson']:
+            raise ValueError("Distribution needs to be one of ['gaussian','cauchy','gamma','poisson'].")
+
+        # coefficients for KDE
+        alpha_i = list(self.indicator_coefs().values())
+        # locations of the center of the probability mass
+        mu_i = self.midpoints()
+        # dispersion of the distribution
+        width = self.subintervals()[0][1] - self.subintervals()[0][0]
+        sigma = 0.5 * width
+        
+        pdf_exp = []
+        # Gaussian RV
+        if dist == 'gaussian':
+            for alpha,mu in zip(alpha_i, mu_i):
+                # weighted sum of gaussians
+                # centered at midpoints of the intervals
+                # variance equal to half-width of the intervals
+                pdf_exp.append(f"{alpha}*N(x;{mu},{sigma})")
+            return f"[{' + '.join(pdf_exp)}]/{len(self.arr)}"
+        
+        # Cauchy RV
+        elif dist == 'cauchy':
+            for alpha,mu in zip(alpha_i, mu_i):
+                # weighted sum of Cauchy random variables
+                # centered at midpoints of the intervals
+                # variance equal to the full width of the intervals
+                pdf_exp.append(f"{alpha}*Cauchy(x; {mu}, {2*sigma})")
+            return f"[{' + '.join(pdf_exp)}]/{len(self.arr)}"
+
+        # Poisson RV
+        else:
+            from warnings import warn
+            warn(
+                "Poisson requires a support [0,inf). At the least, ensure that x = [0,N] for large N.",
+                category=UserWarning)
+
+            for alpha,mu in zip(alpha_i, mu_i):
+                # weighted sum of Poisson random variables
+                # centered at midpoints of the intervals
+                pdf_exp.append(f"{alpha}*Poisson(x; {mu})")
+            return f"[{' + '.join(pdf_exp)}]/{len(self.arr)}"
