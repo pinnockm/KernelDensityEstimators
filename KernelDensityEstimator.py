@@ -45,9 +45,11 @@ class KDE:
         pass
     
     def __stats(self):
-        from scipy.stats import skew
+        from scipy.stats import skew, gmean, hmean
         return {
-            "Mean": np.mean(self.arr),
+            "AMean": np.mean(self.arr),
+            "GMean": gmean(self.arr),
+            "HMean": hmean(self.arr),
             "Variance": np.var(self.arr),
             "Skewness": skew(self.arr),
             "Quartiles": [np.quantile(self.arr, q/4) for q in range(5)]
