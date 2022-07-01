@@ -17,13 +17,9 @@ Current KDE options include:
 
 ## Some Quantitative Comments:
 
-If estimating using Gaussian, I recommend using something like Sturgis' Rule (`cuts = 1+3.3log10(n)`, where `n = len(data)`) for determining the number of cuts to use. Obviously, increasing the number of cuts too high will result in a gross overfitting of the estimation. 
+If estimating using Gaussian, I recommend using something like Sturgis' Rule (`cuts = 1 + 3.3*log10(n)`, where `n = len(data)`) for determining the number of cuts to use. Obviously, increasing the number of cuts too high will result in a gross overfitting of the estimation. 
 
 If estimating using Cauchy, I find that increasing the number of cuts by around a factor of 2 helps the appearance of the estimation. Using something like Rice's Rule (`cuts = 2n^(1/3)`, where `n = len(data)`) is beneficial here.
 
 If estimating using Poisson, ensure that 1) The support is `[0,N]` for some large integer `N`, 2) The data is roughly monotone decreasing. If it can be helped, try to additionally use integer valued data (this is not neccessary however).
 
-
-## In Construction:
-
-Including a method which will return the analytic expression of an estimation.
